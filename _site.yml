@@ -9,6 +9,7 @@ href: Week_8_slides_ver2.html
 right:
   - icon: ion-social-github
 href: https://github.com
+output_dir: "slides"
 output:
   html_document:
   theme: flatly
