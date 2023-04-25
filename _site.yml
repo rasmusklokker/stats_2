@@ -4,12 +4,14 @@ navbar:
   left:
     - text: "Home"
       href: index.html
-    - text: "Multiple regression, omitted variables, Frisch-Waugh-Lovell"
-      href: Week_8_slides_ver2.html
+    - text: "slides"
+      menu:
+        - text: "Multiple regression, omitted variables, Frisch-Waugh-Lovell"
+          href: slides/Week_8_slides_ver2.html
   right:
     - icon: ion-social-github
       href: https://github.com
-output_dir: "slides"
+output_dir: "docs"
 output:
   html_document:
     theme: flatly
