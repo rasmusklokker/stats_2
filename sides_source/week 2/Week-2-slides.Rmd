@@ -1,0 +1,711 @@
+---
+title: "Advanced quantitative methods øvelsestime uge 2"
+author: "Rasmus Klokker"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+
+```{r setup, include=FALSE}
+library(magick)
+
+library(ggplot2)
+
+library(patchwork)
+
+library(democracyData)
+
+library(dplyr)
+
+options(htmltools.dir.version = FALSE)
+
+knitr::opts_chunk$set(echo=FALSE)
+
+crop <- function(im, left = 0, top = 0, right = 0, bottom = 0) {
+  d <- dim(im[[1]]); w <- d[2]; h <- d[3]
+  image_crop(im, glue::glue("{w-left-right}x{h-top-bottom}+{left}+{top}"))
+}
+
+
+theme_set(theme_minimal(base_size = 16,base_family = "serif")+ theme(axis.line = element_line(color='black'),
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank()))
+
+```
+
+
+```{css, echo=FALSE}
+.strike {
+  text-decoration: line-through
+}
+```
+
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightpink;
+  border: 3px solid red;
+  font-weight: bold;
+}
+```
+
+
+class: center, middle
+
+```{r get_data}
+
+# Dat_citi_rights <- download_fh(verbose = FALSE) %>% # Download Freedom House data for all countries since 1972,
+#    rename(country = fh_country, # rename country ID,
+#           citizen_rights = fh_total_reversed, # rename Citizenship rights indicator,
+#           date = year)
+
+```
+
+
+
+
+# Spørgsmål til undervisningen?
+
+
+---
+
+
+# Korrelation
+
+## Hvad er en korrelation?
+
+
+.left-column[
+
+
+
+Et mål for den _lineære_ sammenhæng mellem to _kontinuerte_ variable
+
+]
+
+
+.right-column[
+
+```{r cor_sim, out.width="500px"}
+
+x <- rnorm(1000)
+
+y.lin <- 2*x+rnorm(1000,0,.2)
+
+y.nonlin <- 2*x^2+rnorm(1000,0,.2)
+
+
+
+cordf <- data.frame(x=x, y_lin=y.lin, y_nonlin=y.nonlin)
+
+
+p <- ggplot(data=cordf, aes(x,y_lin))
+p <- p+geom_jitter()
+p <- p+ggtitle(paste("cor = ", round(cor(x,y.lin),4)))
+
+
+p1 <- ggplot(data=cordf, aes(x,y_nonlin))
+p1 <- p1+geom_jitter()
+p1 <- p1+ggtitle(paste("cor = ", round(cor(x,y.nonlin),4)))
+
+
+p+p1
+
+```
+]
+---
+
+class: center, middle
+
+#Korrelation med binære variable?
+
+
+```{r binary_cor_sim}
+
+age <- rbinom(1000,1,.3)
+
+
+age.rec <- ifelse(age==1, "gammel", "ung")
+
+#wealth <- ifelse(age=="gammel", "rig", "fattig")
+
+p <- ifelse(age.rec=="gammel", .7,.4)
+
+
+wealth <- rbinom(length(age),1,p)
+
+wealth.rec <- ifelse(wealth==1, "rig", "fattig")
+
+
+```
+
+```{r table}
+
+knitr::kable(table(wealth.rec, age.rec))
+
+```
+
+---
+
+# Det virker men...
+
+class: center, middle
+
+
+.pull-left[
+
+
+
+
+
+
+
+
+````r
+
+cor(wealth, age)
+
+````
+
+
+
+
+
+
+`r cor(wealth, age)`
+
+
+
+]
+
+--
+
+.pull-right[
+
+![](https://substackcdn.com/image/fetch/w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F77176e8c-7531-40c3-866b-c7e86c373409_596x255.gif)
+
+]
+
+
+
+
+---
+
+## Korrelation fortolkning
+
+Angiver _styrken_ af sammenhængen og til dels retningen
+
+en positiv korrelation angiver at to variable "følger hinanden"
+
+- når den ene variabel stiger i værdi, så stiger den anden også i værdi.
+
+- Når den ene variabel falder i færdi, så falder den anden variabel også i værdi
+
+- Eksempel - Sammenhængen mellem fravær i skolen og karakter: Når du kommer til flere timer får du højere karakterer, når du kommer til færre timer får du lavere karakterer
+
+En negativ korrelation betyder at variablene "går den modsatte vej"
+
+- når den ene variabel stiger i værdi, så falder den anden i værdi.
+
+- når den ene variabel falder i værdi, så stiger den anden i værdi.
+
+- Eksempel - Sammenhængen mellem træning og besøg hos lægen: Når du træner mere, har du færre besøg hos lægem. Når du træner mindre har du flere besøg hos lægen
+
+
+---
+
+#Hvad kan vi sige udover det?
+
+Er en $r$ på 0,5 meget eller lidt? 
+
+Vi bliver nødt til at have en slags referenceramme
+
+Der er regressionskoefficienter meget mere præcise at fortolke på, og, i mange tilfælde, lettere at forholde sig til. 
+
+Hvis vi eksempelvis finder en korrelation mellem fravær og karakterer på 0,6, så kan vi nok sige at det er en ret stærk sammenhæng. Men hvad mere end det?
+
+Hvis vi får en regressionskoefficient der viser, at 1% øget fravær resulterer 0,3 karakterpoint lavere karaktergennemsnit, så ved vi at 10% øget fravær havde resulteret i et gennemsnit der var 3 karakterpoint lavere. Med andre ord kunne 10% fravær nemt have kostet en studerende en plads på drømmestudiet.
+
+Det betyder ikke at korrelationer ikke er anvendelige
+
+- korrelationsmatricer
+
+- standardiseret mål
+
+### Kovarians recap
+
+### fra kovarians til korrelation
+
+## Korrelationer er lineære sammenhænge!
+
+## Game time
+
+http://guessthecorrelation.com/
+
+---
+
+
+# Regression
+
+## Hvad er regression?
+
+En metode til at estimere en linæer sammenhæng mellem to variable
+
+## Hvordan fortolker man beta-koefficient?
+
+$y=\beta_0+\beta X_{1i}+\epsilon_i$
+
+--
+
+$karaktergennemsnit=\beta_0+\beta_1fravær_{1i}+\epsilon_i$
+
+--
+
+$karaktergennemsnit=4+-0,2 fravær_{1i}+\epsilon_i$
+
+Hvis vi måler fravær i procent, kan vi fortolke $\beta_1$, som her er -0,2, således:
+
+**En enhedsændrings for fravær medfører en ændring i karaktergennemsnit på -0,2 karakterpoint**
+
+=
+
+**Hvis vi øger fravær med 1% bliver karaktergennemsnit 0,2 karakterpoint mindre**
+
+---
+
+# Fortolkning step by step
+
+1. Hvad er din afhængige variabel = **Variabel afhængig** I eksemplet var det _karaktergennemsnit_
+
+2. Hvilken enhed er din afhængige variabel målt i = **Enhed_afhængig** I eksemplet er den afhængige variabel karaktergennemsnit som er målt i _karakterpoint_
+
+3. Hvad er din uafhængige variabel = **Variabel uafhængig** I eksemplet var det _fravær_
+
+3. Hvilken enhed er din uafhængige variabel målt i = **Enhed_uafhængig** I eksemplet er den uafhængige variabel fravær, som er målt i _procent_
+
+4. Hvad er regressions/beta-koefficienten for den uafhængige variabel = **beta-koefficient** I eksemplet var den -0,2
+
+5. Du sætter**Variabel afhængig**, **Enhed_afhængig**, **Variabel uafhængig**, **Enhed_uafhængig** og **beta-koefficient** ind i sætningen: "Hvis vi øger **Variabel_uafhængig** med en **Enhed_uafhængig** giver det en ændring i **beta-koefficient** **Enhed_uafhængig** for den afhængige variabel **Variabel uafhængig**"
+
+I eksemplet bliver det altså: "Hvis vi øger _fravær_ med en _procent_ giver det en ændring i _-0,2_ _karakterpoint_ for den afhængige variabel _karaktergennemsnit_"
+
+---
+
+## Hvordan fortolker man output i R
+
+
+
+```{r regression gpa absence, results="hide"}
+fravaer <- runif(100, min =0 , max = 100)
+
+karakter <- 4+-.2*fravaer+rnorm(100,0,2)
+
+df <- data.frame(karakter=karakter, fravaer=fravaer)
+
+summary(lm(karakter~fravaer, data=df))
+```
+
+
+
+```{r output interpret}
+
+knitr::include_url("C:/Users/B059064/Desktop/PHD/teaching/summary.htm")
+
+```
+
+---
+
+## residualer
+
+residualer er _forskellen mellem de forudsagte værdier og de værdier vi faktisk observerer_ 
+
+I vores eksempel er de forudsagte værdier således de værdier for karaktergennemsnit vi får ud, når vi sætter en værdi for "fravaer" ind i vores regressionmodel
+
+Lad os tage et eksempel
+
+en studerende har et karaktergennemsnit på 8,2 og en fraværsprocent på 15.
+
+Hvis vi sætter værdien for fravær ind i vores model så får vi
+
+```{r coefs}
+
+coefs <- lm(karakter~fravaer, data=df)$coefficients
+
+pred <- coefs[1]+coefs[2]*15
+
+
+```
+
+
+$karakter=\beta_0+\beta_1fravaer -> `r paste(pred)`=`r paste(coefs[1])`+`r paste(coefs[2])`*15$
+
+Ifølge modellen skulle eleven altså have klaret sig væsentligt dårligere end det faktisk var tilfældet. Hvad er residualet?
+
+$karakter_{forudsagt}-karakter_{observeret})=`r paste(pred)`-8,2=`r paste(pred-8.2)`$
+
+```{r residuals}
+lm <- lm(karakter~fravaer, data=df[1:10,])
+
+
+
+raw <- lm$fitted.values[1:10]-df$karakter[1:10]
+
+squared <- (df$karakter[1:10]-lm$fitted.values[1:10])^2
+
+
+
+resi.df <- data.frame(karakter=df$karakter[1:10], predicted=lm$fitted.values[1:10], raw=raw, squared=squared)
+
+names(resi.df)[3:4] <- c("predicted-karakter", "(predicted-karakter)^2")
+
+
+resi.df
+
+
+
+```
+
+
+
+
+```{r resiplot}
+
+
+# p <- ggplot(resi.df, aes(df$fravaer[1:10],karakter))
+# p <- p+geom_point()
+# p <- p+geom_abline(intercept = lm$coefficients[1], slope=lm$coefficients[2])
+# p
+# 
+#  geom_point(data = segments, aes(X,Y)) +
+#     geom_line(data = newline, aes(x,y)) +
+#     geom_segment(data = segments, aes(x = X, y = Y, xend = X2, yend = Y2), 
+#                  color = "orangered", alpha = 0.5) +
+#     coord_equal() + xlim(c(177000, 182000))
+#  
+
+        
+
+    
+
+ 
+```
+
+---
+
+### Linien der bedst passer på data
+
+### Hvordan finder man den bedste linie?
+
+Ved at finde de regressionskoefficienter der giver den mindste, kvadrerede, sum af residualer
+
+Med andre ord, finder vi den $\beta_0$ og den $beta_1$ værdi der gør, at $\Sigma(karakter_{forudsagt}-karakter_{observeret})^2$ er mindst mulig!
+
+### Hvad er RSS i vores eksempel
+
+```{r rss ex}
+
+ cat(paste("(", resi.df$predicted, "-" ,resi.df$karakter,")","^2", collapse="+\n", sep=""))
+ 
+  cat(paste("(", resi.df$predicted-resi.df$karakter,")","^2", collapse="+\n", sep=""))
+  
+    cat(paste((resi.df$predicted-resi.df$karakter)^2, collapse="+\n", sep=""))
+    
+        cat(paste("RSS=",sum((resi.df$predicted-resi.df$karakter)^2), sep=""))
+
+```
+
+
+---
+
+### Hvad nu hvis vi havde valgt nogle andre koefficienter?
+
+Er vi nu sikre på, at de koefficienter som R har spyttet ud er dem der minimerer RSS, dvs. er dem der giver den linie der bedst passer på data?
+
+Vi kan hurtigt prøve at se hvad der sker med RSS, hvis vi nu prøver at indsætte nogle andre $\beta_0$ og $\beta_1$ værdier
+
+```{r fit fake, echo=TRUE}
+
+fitted.fake <- 3+0.1*df$fravaer[1:10] 
+
+rss.fake <- sum((fitted.fake-df$karakter[1:10])^2)
+
+rss.fake
+
+```
+Ok det var tydeligvis ikke et valg af værdier der var bedre end dem vi fik fra R
+
+Hvad nu hvis vi prøver nogle andre værdier...MANGE andre værdider
+
+Hvad med....
+
+--
+
+40.000 forskellige værdier!
+
+```{r fit fake loop, echo=TRUE, eval=FALSE}
+
+combs <- expand.grid(intercept=seq(0,10,.05), beta_1=seq(0,10,.05)) #lav alle kombinationer af forskellige værdier for intercept og beta_1
+
+fit.loop <- lapply(1:nrow(combs), function(x){ #kør en løkke på tværs af sekvensen 1,2,3,4,....antal rækker i "combs"
+  
+  cat("iter", x, "\r")
+
+  #vælg værdien fra variablen "intercept" i række x og værdier fra variablen beta_1 i række x
+  #sæt værdierne ind i vores regressionsligning, dvs. intercept-værdi+beta_værdi*fravaer
+  #her vælger vi de første 10 værdier af "fravaer"
+  #resultatet er de forudsagte værdier for "karakter", som her er navngivet "karakter.predicted"
+  
+  
+  karakter.predicted <- combs$intercept[x]+combs$beta_1[x]*df$fravaer[1:10] 
+
+  #udregn RSS. "df$karakter[1:10]" er de første 10 værdier af "karakter" som vi faktisk har observeret
+  
+  
+  
+rss.fake <- sum((karakter.predicted-df$karakter[1:10])^2)
+
+
+
+#saml resultaterne i en data.frame
+
+res.df <- data.frame(intercept=combs$intercept[x], beta_1=combs$beta_1[x], rss=rss.fake)
+  
+  
+})
+
+#Lapply spytter en list med hver enkelt data.frame ud(dvs. ca 40.000 data.frames). Vi ville hellere have een stor data.frame
+#med alle resultaterne samlet. Derfor sætter vi alle de enkelte data.frames sammen nedenfor. Funtkionen "rbind" sætter data.frames sammen
+#rækkevis, dvs. at "rbind" stabler to data.frames "oven på" hinanden ligesom at stable byggeklodser. "rbind" virker KUN hvis de to data.frames har
+#de samme kolonner
+
+fits.df <- do.call("rbind", fit.loop)
+
+
+
+
+#vi beregner rangeringen af de forskellige RSS værdier, dvs. den laveste RSS værdi er "på førstepladsen" og har derfor en rangering på 1
+#den næsthøjeste RSS værdi har en rangering på 2 osv.
+
+fits.df$rank <- rank(fits.df$rss)
+
+#det tog lidt tid at køre den løkke så lad os gemme data
+
+write.csv(fits.df, file="resi_loop.csv")
+
+
+
+```
+
+---
+
+```{r old plots, echo=FALSE}
+
+
+# breaks <- c(12,25,200)
+# 
+# 
+# p <- ggplot(data=fits.df, aes(intercept, beta_1, color=rss))
+# p <- p+geom_point()
+# p <- p+scale_colour_gradientn(colours = c("blue","red","black"),
+#                          breaks = breaks, labels = format(breaks))
+# p
+# 
+# 
+# breaks <- c(0,15,30)
+# 
+# thresh.100 <- head(sort(fits.df$rss),1000)[1000]
+# 
+# p <- ggplot(data=fits.df[fits.df$rss<=thresh.100,], aes(intercept, beta_1, color=rss))
+# p <- p+geom_point()
+# #p <- p+ylim(0, .25)+xlim(0,4.5)
+# #p <- p+scale_colour_gradientn(colours = c("blue","red","black"),
+#                          #breaks = breaks, labels = format(breaks))
+# p
+# 
+# library(plotly)
+# 
+# 
+# gg <- 
+#   ggplot(dat, aes(Sepal.Length, Sepal.Width, color = Species, frame = months)) + 
+#   geom_point()
+# 
+# ggplotly(gg)
+# 
+# fits.df$rank <- rank(fits.df$rss)
+# 
+# 
+# fits.df$rank.cat <- cut(fits.df$rank, c(1,seq(1000,nrow(fits.df),1000)), dig.lab=10, ordered_result=TRUE)
+# 
+# p <- ggplot(data=fits.df[fits.df$rank.cat<="(1000,2000]",], aes(intercept, beta_1, color=rss))
+# p <- p+geom_point()
+# #p <- p+ylim(0, .25)+xlim(0,4.5)
+# p
+# 
+# 
+# p <- ggplot(data=fits.df, aes(intercept, beta_1, color=rss, frame=rank.cat))
+# p <- p+geom_point()
+# #p <- p+ylim(0, .25)+xlim(0,4.5)
+# p <- p+scale_colour_gradientn(colours = c("blue","red","black"),
+#                          breaks = breaks, labels = format(breaks))
+# p
+# 
+# 
+# ggplotly(p)
+
+
+```
+
+
+```{r, interactive plot1, echo=FALSE}
+
+# #load fits.df 
+# 
+# fits.df <- read.csv("resi_loop.csv")
+# 
+# library(shiny)
+# 
+# # shinyApp(
+# # 
+# #   ui = fluidPage(
+# #     sliderInput("rank", "Rank:",
+# #                 min = 1, max = max(fits.df$rank),
+# #                            value = c(1,max(fits.df$rank)), 
+# #                 step=5, width = "800px"),
+# #     plotOutput("phonePlot")
+# #   ),
+# # 
+# #   server = function(input, output) {
+# #     output$phonePlot = renderPlot({
+# #       p <- ggplot(data=fits.df[fits.df$rank<=input$rank,], aes(intercept, beta_1, color=rss))
+# # p <- p+geom_point()
+# # #p <- p+ylim(0, 10)+xlim(0,10)
+# # p
+# #     })
+# #   },
+# # 
+# #   options = list(height = 800)
+# # )
+# ```
+# 
+# ```{r shiny 2}
+# 
+# 
+# ui <- fluidPage(
+#   sliderInput("rank", "Rank:",
+#                 min = 1, max = max(fits.df$rank),
+#                            value = c(1,max(fits.df$rank)), 
+#                 step=5, width = "800px"),
+#   fluidRow(
+#     column(width = 12, class = "well",
+#       h4("Left plot controls right plot"),
+#         column(width = 12,
+#           plotOutput("plot2", height = 500,
+#             brush = brushOpts(
+#               id = "plot2_brush",
+#               resetOnNew = TRUE
+#             )
+#           )
+#         ),
+#         column(width = 12,
+#           plotOutput("plot3", height = 500)
+#         )
+#       )
+#     )
+# 
+#   )
+# 
+# server <- function(input, output) {
+# 
+# 
+#   # -------------------------------------------------------------------
+#   # Linked plots (middle and right)
+#   ranges2 <- reactiveValues(x = NULL, y = NULL)
+# 
+#   output$plot2 <- renderPlot({
+#       p <- ggplot(data=fits.df[fits.df$rank<=input$rank,], aes(intercept, beta_1, color=rss))
+# p <- p+geom_point()
+# p <- p+ylim(0, 10)+xlim(0,10)
+# p
+#   })
+# 
+#   output$plot3 <- renderPlot({
+#       p <- ggplot(data=fits.df[fits.df$rank<=input$rank,], aes(intercept, beta_1, color=rss))
+# p <- p+geom_point()
+# p <- p+ylim(0, 10)+xlim(0,10)
+# p <- p+coord_cartesian(xlim = ranges2$x, ylim = ranges2$y, expand = TRUE)
+# p
+#   })
+# 
+#   # When a double-click happens, check if there's a brush on the plot.
+#   # If so, zoom to the brush bounds; if not, reset the zoom.
+#   observe({
+#     brush <- input$plot2_brush
+#     if (!is.null(brush)) {
+#       ranges2$x <- c(brush$xmin, brush$xmax)
+#       ranges2$y <- c(brush$ymin, brush$ymax)
+# 
+#     } else {
+#       ranges2$x <- NULL
+#       ranges2$y <- NULL
+#     }
+#   })
+# 
+# }
+# 
+# 
+# shinyApp(ui, server)
+
+shiny::runApp("C:/Users/B059064/Desktop/PHD/papers/TTC dif in dif/PHD_dissertation/resi_plot/app.r")
+
+
+```
+
+
+
+
+---
+
+# Break
+
+15 mins!
+
+
+
+![](https://i.gifer.com/NBDg.gif)
+
+---
+
+# Gennemgang af online øvelse
+
+
+---
+
+# Øvelse med nye data
+
+hvis der er tid
+
+---
+
+#Ordbog med begreber og R kommandoer
+
+google sheet/doc med forslag
+
+---
+
+# Vi ses næste uge!!
+
+## Office hours
+
+16.2.18, mandag-torsdag 13-15
+
+rhk@vive.dk
+
+rhk@soc.ku.dk
+
