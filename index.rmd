@@ -1,0 +1,14 @@
+---
+  title: "Stats 2 fall/winter 2022 materials for TA sessions"
+  author: Rasmus H. Klokker
+  output: html_document
+  email: rhk@vive.dk
+  github_repo: https://github.com/rasmusklokker/stats_2
+---
+
+
+This site primarily contains the lecture materials i used during tutorial/excercise
+sessions in the course "Stats 2" at the Department of Sociology, University of Copenhagen.
+
+The slides provided here are in danish, however the source code in the main repository should be more accessible to "international audiences"
+
