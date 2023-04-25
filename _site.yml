@@ -1,0 +1,15 @@
+name: "Stats 2 website yaml"
+navbar:
+  title: "Stats 2 fall/winter TA lecture materials"
+left:
+  - text: "Home"
+href: index.html
+- text: "Multiple regression, omitted variables, Frisch-Waugh-Lovell"
+href: Week_8_slides_ver2.html
+right:
+  - icon: ion-social-github
+href: https://github.com
+output:
+  html_document:
+  theme: flatly
+highlight: textmate
