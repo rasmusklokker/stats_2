@@ -6,7 +6,13 @@ navbar:
       href: index.html
     - text: "slides"
       menu:
-        - text: "Multiple regression, omitted variables, Frisch-Waugh-Lovell"
+        - text: "Week 1 - intro"
+          href: slides/week-1-intro.html
+        - text: "Week 2 - correlation, regression and residuals"
+          href: slides/Week_2_slides.html
+        - text: "Week 3 - survey weights, standard errors and statistical inference"
+          href: slides/Week_3_slides.html
+        - text: "Week 8 - Multiple regression, omitted variables, Frisch-Waugh-Lovell"
           href: slides/Week_8_slides_ver2.html
   right:
     - icon: ion-social-github
