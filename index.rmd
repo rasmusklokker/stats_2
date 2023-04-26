@@ -12,3 +12,9 @@ sessions in the course "Stats 2" at the Department of Sociology, University of C
 
 The slides provided here are in danish, however the source code in the main repository should be more accessible to "international audiences"
 
+The structure of the site is heavily inspired by https://github.com/psu-psychology/psy-525-reproducible-research-2020/tree/master/how_to/web_site_template
+
+and 
+
+https://www.youtube.com/watch?v=ozta7H7WK58&t=703s
+
